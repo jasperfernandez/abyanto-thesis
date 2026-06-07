@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-$host = getenv('DB_HOST') ?: '127.0.0.1';
+$host = getenv('DB_HOST') ?: 'sql302.infinityfree.com';
 $port = getenv('DB_PORT') ?: '3306';
-$database = getenv('DB_DATABASE') ?: 'licensure_predictor';
-$username = getenv('DB_USERNAME') ?: 'root';
-$password = getenv('DB_PASSWORD') ?: '';
+$database = getenv('DB_DATABASE') ?: 'if0_42121153_abyanto';
+$username = getenv('DB_USERNAME') ?: 'if0_42121153';
+$password = getenv('DB_PASSWORD') ?: 'ORuwLcT7O0BIl';
 
 $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
 

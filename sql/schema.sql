@@ -16,6 +16,16 @@ CREATE TABLE students (
   licensure_result ENUM('PASS', 'FAIL') NOT NULL DEFAULT 'FAIL',
   major_average DECIMAL(4,2) NULL,
   program VARCHAR(160) NOT NULL,
+  city_municipality VARCHAR(120) NULL,
+  province VARCHAR(120) NULL,
+  postal_code VARCHAR(20) NULL,
+  age TINYINT UNSIGNED NULL,
+  sex ENUM('Male', 'Female') NULL,
+  secondary_school_name VARCHAR(180) NULL,
+  secondary_school_type ENUM('Private', 'Public') NULL,
+  father_educational_attainment VARCHAR(80) NULL,
+  mother_educational_attainment VARCHAR(80) NULL,
+  monthly_family_income VARCHAR(80) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

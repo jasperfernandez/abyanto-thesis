@@ -28,6 +28,27 @@ $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $cours
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
 $hasPrediction = in_array($prediction, ['PASS', 'FAIL'], true);
+$sexOptions = ['Male', 'Female'];
+$schoolTypeOptions = ['Private', 'Public'];
+$educationalAttainmentOptions = [
+    'No Education',
+    'Elementary Level',
+    'Elementary Graduate',
+    'School Level',
+    'High School Graduate',
+    'College Undergraduate',
+    'College Graduate',
+    'Post-Graduate',
+];
+$monthlyFamilyIncomeOptions = [
+    'Below 10,000',
+    '10,000 to 15,000',
+    '15,001 to 20,000',
+    '20,001 to 30,000',
+    '30,001 to 40,000',
+    '40,001 to 50,000',
+    '50,001 to 100,000 and above',
+];
 ?>
 <!doctype html>
 <html lang="en">
@@ -79,6 +100,77 @@ $hasPrediction = in_array($prediction, ['PASS', 'FAIL'], true);
                     <label class="block">
                         <span class="text-sm font-medium text-slate-700">Program</span>
                         <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="program" value="<?= e($student['program']) ?>" required>
+                    </label>
+                </div>
+            </section>
+
+            <section class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold">Student Background</h2>
+                <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">City/Municipality</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="city_municipality" value="<?= e($student['city_municipality']) ?>">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Province</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="province" value="<?= e($student['province']) ?>">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Postal Code</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="postal_code" value="<?= e($student['postal_code']) ?>">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Age</span>
+                        <input type="number" min="1" max="120" class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="age" value="<?= e((string) $student['age']) ?>">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Sex</span>
+                        <select class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="sex">
+                            <option value="">Select sex</option>
+                            <?php foreach ($sexOptions as $option): ?>
+                                <option value="<?= e($option) ?>"<?= selectedOption($student['sex'], $option) ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Secondary School Name</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="secondary_school_name" value="<?= e($student['secondary_school_name']) ?>">
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Secondary School Type</span>
+                        <select class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="secondary_school_type">
+                            <option value="">Select school type</option>
+                            <?php foreach ($schoolTypeOptions as $option): ?>
+                                <option value="<?= e($option) ?>"<?= selectedOption($student['secondary_school_type'], $option) ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Educational Attainment (Father)</span>
+                        <select class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="father_educational_attainment">
+                            <option value="">Select attainment</option>
+                            <?php foreach ($educationalAttainmentOptions as $option): ?>
+                                <option value="<?= e($option) ?>"<?= selectedOption($student['father_educational_attainment'], $option) ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Educational Attainment (Mother)</span>
+                        <select class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="mother_educational_attainment">
+                            <option value="">Select attainment</option>
+                            <?php foreach ($educationalAttainmentOptions as $option): ?>
+                                <option value="<?= e($option) ?>"<?= selectedOption($student['mother_educational_attainment'], $option) ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Monthly Family Income</span>
+                        <select class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="monthly_family_income">
+                            <option value="">Select income range</option>
+                            <?php foreach ($monthlyFamilyIncomeOptions as $option): ?>
+                                <option value="<?= e($option) ?>"<?= selectedOption($student['monthly_family_income'], $option) ?>><?= e($option) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
                 </div>
             </section>

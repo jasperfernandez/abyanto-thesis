@@ -69,6 +69,45 @@ LAST_NAMES = [
     "Abad",
 ]
 
+CITIES = [
+    ("Bislig City", "Surigao del Sur", "8311"),
+    ("Tandag City", "Surigao del Sur", "8300"),
+    ("Hinatuan", "Surigao del Sur", "8310"),
+    ("Barobo", "Surigao del Sur", "8309"),
+    ("Tagbina", "Surigao del Sur", "8308"),
+    ("Lianga", "Surigao del Sur", "8307"),
+]
+
+SECONDARY_SCHOOLS = [
+    ("Bislig City National High School", "Public"),
+    ("Andres Soriano Colleges of Bislig High School", "Private"),
+    ("Tabon M. Estrella National High School", "Public"),
+    ("De La Salle John Bosco College High School", "Private"),
+    ("Mangagoy National High School", "Public"),
+    ("Colegio de San Nicolas de Tolentino", "Private"),
+]
+
+EDUCATIONAL_ATTAINMENTS = [
+    "No Education",
+    "Elementary Level",
+    "Elementary Graduate",
+    "School Level",
+    "High School Graduate",
+    "College Undergraduate",
+    "College Graduate",
+    "Post-Graduate",
+]
+
+MONTHLY_FAMILY_INCOMES = [
+    "Below 10,000",
+    "10,000 to 15,000",
+    "15,001 to 20,000",
+    "20,001 to 30,000",
+    "30,001 to 40,000",
+    "40,001 to 50,000",
+    "50,001 to 100,000 and above",
+]
+
 
 def sql(value):
     if value is None:
@@ -118,7 +157,7 @@ lines.append(",\n".join(course_values) + ";")
 lines.append("")
 
 lines.append(
-    "INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program) VALUES"
+    "INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program, city_municipality, province, postal_code, age, sex, secondary_school_name, secondary_school_type, father_educational_attainment, mother_educational_attainment, monthly_family_income) VALUES"
 )
 student_values = []
 grade_values = []
@@ -132,6 +171,10 @@ for student_index, row in enumerate(rows[1:], start=1):
     major_average = round(sum(major_grades) / len(major_grades), 2) if major_grades else None
     predicted_result = "FAIL" if major_average is not None and major_average >= 2.49 else "PASS"
     full_name = f"{FIRST_NAMES[(student_index - 1) % len(FIRST_NAMES)]} {LAST_NAMES[(student_index - 1) % len(LAST_NAMES)]}"
+    city, province, postal_code = CITIES[(student_index - 1) % len(CITIES)]
+    secondary_school_name, secondary_school_type = SECONDARY_SCHOOLS[
+        (student_index - 1) % len(SECONDARY_SCHOOLS)
+    ]
 
     student_values.append(
         "("
@@ -141,7 +184,17 @@ for student_index, row in enumerate(rows[1:], start=1):
         f"{sql(round(float(gwa), 2))}, "
         f"{sql(predicted_result)}, "
         f"{sql(major_average)}, "
-        f"{sql(program)}"
+        f"{sql(program)}, "
+        f"{sql(city)}, "
+        f"{sql(province)}, "
+        f"{sql(postal_code)}, "
+        f"{sql(21 + ((student_index - 1) % 5))}, "
+        f"{sql('Male' if student_index % 2 else 'Female')}, "
+        f"{sql(secondary_school_name)}, "
+        f"{sql(secondary_school_type)}, "
+        f"{sql(EDUCATIONAL_ATTAINMENTS[(student_index + 2) % len(EDUCATIONAL_ATTAINMENTS)])}, "
+        f"{sql(EDUCATIONAL_ATTAINMENTS[(student_index + 4) % len(EDUCATIONAL_ATTAINMENTS)])}, "
+        f"{sql(MONTHLY_FAMILY_INCOMES[(student_index - 1) % len(MONTHLY_FAMILY_INCOMES)])}"
         ")"
     )
 

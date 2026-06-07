@@ -7,6 +7,11 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function selectedOption(?string $currentValue, string $optionValue): string
+{
+    return $currentValue === $optionValue ? ' selected' : '';
+}
+
 function recalculateMajorAverage(PDO $pdo, int $studentId): array
 {
     $statement = $pdo->prepare(

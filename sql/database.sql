@@ -1,9 +1,3 @@
-CREATE DATABASE IF NOT EXISTS licensure_predictor
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE licensure_predictor;
-
 DROP TABLE IF EXISTS student_grades;
 DROP TABLE IF EXISTS courses;
 DROP TABLE IF EXISTS students;
@@ -16,6 +10,16 @@ CREATE TABLE students (
   licensure_result ENUM('PASS', 'FAIL') NOT NULL DEFAULT 'FAIL',
   major_average DECIMAL(4,2) NULL,
   program VARCHAR(160) NOT NULL,
+  city_municipality VARCHAR(120) NULL,
+  province VARCHAR(120) NULL,
+  postal_code VARCHAR(20) NULL,
+  age TINYINT UNSIGNED NULL,
+  sex ENUM('Male', 'Female') NULL,
+  secondary_school_name VARCHAR(180) NULL,
+  secondary_school_type ENUM('Private', 'Public') NULL,
+  father_educational_attainment VARCHAR(80) NULL,
+  mother_educational_attainment VARCHAR(80) NULL,
+  monthly_family_income VARCHAR(80) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -47,8 +51,6 @@ CREATE TABLE student_grades (
     FOREIGN KEY (course_id) REFERENCES courses (id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
-USE licensure_predictor;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DELETE FROM student_grades;
@@ -132,33 +134,33 @@ INSERT INTO courses (id, code, name, is_major, sort_order) VALUES
 (70, 'Path Fit 4', 'Path Fit 4', 0, 70),
 (71, 'Rizal', 'Rizal', 0, 71);
 
-INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program) VALUES
-(1, 102, 'Miguel Santos', 82.6, 'PASS', 1.99, 'Bachelor of Science in Mechanical Engineering'),
-(2, 103, 'Andrea Reyes', 81.8, 'PASS', 2.1, 'Bachelor of Science in Mechanical Engineering'),
-(3, 104, 'Rafael Cruz', 72.8, 'FAIL', 2.74, 'Bachelor of Science in Mechanical Engineering'),
-(4, 105, 'Sofia Bautista', 76.4, 'PASS', 2.35, 'Bachelor of Science in Mechanical Engineering'),
-(5, 106, 'Gabriel Garcia', 85.2, 'PASS', 1.86, 'Bachelor of Science in Mechanical Engineering'),
-(6, 107, 'Isabella Mendoza', 81.6, 'PASS', 2.06, 'Bachelor of Science in Mechanical Engineering'),
-(7, 108, 'Nathaniel Ramos', 83.2, 'PASS', 1.92, 'Bachelor of Science in Mechanical Engineering'),
-(8, 109, 'Camille Dela Cruz', 84.2, 'PASS', 1.86, 'Bachelor of Science in Mechanical Engineering'),
-(9, 110, 'Joshua Torres', 83.0, 'PASS', 2.01, 'Bachelor of Science in Mechanical Engineering'),
-(10, 111, 'Mikaela Flores', 83.8, 'PASS', 1.92, 'Bachelor of Science in Mechanical Engineering'),
-(11, 112, 'Adrian Gonzales', 73.8, 'FAIL', 2.62, 'Bachelor of Science in Mechanical Engineering'),
-(12, 113, 'Patricia Villanueva', 82.2, 'PASS', 2.05, 'Bachelor of Science in Mechanical Engineering'),
-(13, 114, 'Jerome Aquino', 83.8, 'PASS', 1.94, 'Bachelor of Science in Mechanical Engineering'),
-(14, 115, 'Clarisse Castillo', 83.0, 'PASS', 1.97, 'Bachelor of Science in Mechanical Engineering'),
-(15, 116, 'Francis Rivera', 76.4, 'PASS', 2.44, 'Bachelor of Science in Mechanical Engineering'),
-(16, 117, 'Angelica Domingo', 82.2, 'PASS', 1.99, 'Bachelor of Science in Mechanical Engineering'),
-(17, 118, 'Vincent Navarro', 74.2, 'FAIL', 2.53, 'Bachelor of Science in Mechanical Engineering'),
-(18, 119, 'Janelle Morales', 74.2, 'FAIL', 2.65, 'Bachelor of Science in Mechanical Engineering'),
-(19, 120, 'Mark Mercado', 74.2, 'FAIL', 2.57, 'Bachelor of Science in Mechanical Engineering'),
-(20, 121, 'Alyssa Valdez', 77.2, 'PASS', 2.29, 'Bachelor of Science in Mechanical Engineering'),
-(21, 122, 'Christian Aguilar', 83.0, 'PASS', 1.88, 'Bachelor of Science in Mechanical Engineering'),
-(22, 123, 'Bianca Salazar', 82.4, 'PASS', 1.91, 'Bachelor of Science in Mechanical Engineering'),
-(23, 124, 'Paolo Pascual', 74.6, 'PASS', 2.47, 'Bachelor of Science in Mechanical Engineering'),
-(24, 125, 'Rochelle Lim', 82.2, 'PASS', 2.0, 'Bachelor of Science in Mechanical Engineering'),
-(25, 126, 'John Soriano', 76.0, 'FAIL', 2.61, 'Bachelor of Science in Mechanical Engineering'),
-(26, 127, 'Katrina Abad', 83.2, 'PASS', 2.0, 'Bachelor of Science in Mechanical Engineering');
+INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program, city_municipality, province, postal_code, age, sex, secondary_school_name, secondary_school_type, father_educational_attainment, mother_educational_attainment, monthly_family_income) VALUES
+(1, 102, 'Miguel Santos', 82.6, 'PASS', 1.99, 'Bachelor of Science in Mechanical Engineering', 'Bislig City', 'Surigao del Sur', '8311', 21, 'Male', 'Bislig City National High School', 'Public', 'School Level', 'College Undergraduate', 'Below 10,000'),
+(2, 103, 'Andrea Reyes', 81.8, 'PASS', 2.1, 'Bachelor of Science in Mechanical Engineering', 'Tandag City', 'Surigao del Sur', '8300', 22, 'Female', 'Andres Soriano Colleges of Bislig High School', 'Private', 'High School Graduate', 'College Graduate', '10,000 to 15,000'),
+(3, 104, 'Rafael Cruz', 72.8, 'FAIL', 2.74, 'Bachelor of Science in Mechanical Engineering', 'Hinatuan', 'Surigao del Sur', '8310', 23, 'Male', 'Tabon M. Estrella National High School', 'Public', 'College Undergraduate', 'Post-Graduate', '15,001 to 20,000'),
+(4, 105, 'Sofia Bautista', 76.4, 'PASS', 2.35, 'Bachelor of Science in Mechanical Engineering', 'Barobo', 'Surigao del Sur', '8309', 24, 'Female', 'De La Salle John Bosco College High School', 'Private', 'College Graduate', 'No Education', '20,001 to 30,000'),
+(5, 106, 'Gabriel Garcia', 85.2, 'PASS', 1.86, 'Bachelor of Science in Mechanical Engineering', 'Tagbina', 'Surigao del Sur', '8308', 25, 'Male', 'Mangagoy National High School', 'Public', 'Post-Graduate', 'Elementary Level', '30,001 to 40,000'),
+(6, 107, 'Isabella Mendoza', 81.6, 'PASS', 2.06, 'Bachelor of Science in Mechanical Engineering', 'Lianga', 'Surigao del Sur', '8307', 21, 'Female', 'Colegio de San Nicolas de Tolentino', 'Private', 'No Education', 'Elementary Graduate', '40,001 to 50,000'),
+(7, 108, 'Nathaniel Ramos', 83.2, 'PASS', 1.92, 'Bachelor of Science in Mechanical Engineering', 'Bislig City', 'Surigao del Sur', '8311', 22, 'Male', 'Bislig City National High School', 'Public', 'Elementary Level', 'School Level', '50,001 to 100,000 and above'),
+(8, 109, 'Camille Dela Cruz', 84.2, 'PASS', 1.86, 'Bachelor of Science in Mechanical Engineering', 'Tandag City', 'Surigao del Sur', '8300', 23, 'Female', 'Andres Soriano Colleges of Bislig High School', 'Private', 'Elementary Graduate', 'High School Graduate', 'Below 10,000'),
+(9, 110, 'Joshua Torres', 83.0, 'PASS', 2.01, 'Bachelor of Science in Mechanical Engineering', 'Hinatuan', 'Surigao del Sur', '8310', 24, 'Male', 'Tabon M. Estrella National High School', 'Public', 'School Level', 'College Undergraduate', '10,000 to 15,000'),
+(10, 111, 'Mikaela Flores', 83.8, 'PASS', 1.92, 'Bachelor of Science in Mechanical Engineering', 'Barobo', 'Surigao del Sur', '8309', 25, 'Female', 'De La Salle John Bosco College High School', 'Private', 'High School Graduate', 'College Graduate', '15,001 to 20,000'),
+(11, 112, 'Adrian Gonzales', 73.8, 'FAIL', 2.62, 'Bachelor of Science in Mechanical Engineering', 'Tagbina', 'Surigao del Sur', '8308', 21, 'Male', 'Mangagoy National High School', 'Public', 'College Undergraduate', 'Post-Graduate', '20,001 to 30,000'),
+(12, 113, 'Patricia Villanueva', 82.2, 'PASS', 2.05, 'Bachelor of Science in Mechanical Engineering', 'Lianga', 'Surigao del Sur', '8307', 22, 'Female', 'Colegio de San Nicolas de Tolentino', 'Private', 'College Graduate', 'No Education', '30,001 to 40,000'),
+(13, 114, 'Jerome Aquino', 83.8, 'PASS', 1.94, 'Bachelor of Science in Mechanical Engineering', 'Bislig City', 'Surigao del Sur', '8311', 23, 'Male', 'Bislig City National High School', 'Public', 'Post-Graduate', 'Elementary Level', '40,001 to 50,000'),
+(14, 115, 'Clarisse Castillo', 83.0, 'PASS', 1.97, 'Bachelor of Science in Mechanical Engineering', 'Tandag City', 'Surigao del Sur', '8300', 24, 'Female', 'Andres Soriano Colleges of Bislig High School', 'Private', 'No Education', 'Elementary Graduate', '50,001 to 100,000 and above'),
+(15, 116, 'Francis Rivera', 76.4, 'PASS', 2.44, 'Bachelor of Science in Mechanical Engineering', 'Hinatuan', 'Surigao del Sur', '8310', 25, 'Male', 'Tabon M. Estrella National High School', 'Public', 'Elementary Level', 'School Level', 'Below 10,000'),
+(16, 117, 'Angelica Domingo', 82.2, 'PASS', 1.99, 'Bachelor of Science in Mechanical Engineering', 'Barobo', 'Surigao del Sur', '8309', 21, 'Female', 'De La Salle John Bosco College High School', 'Private', 'Elementary Graduate', 'High School Graduate', '10,000 to 15,000'),
+(17, 118, 'Vincent Navarro', 74.2, 'FAIL', 2.53, 'Bachelor of Science in Mechanical Engineering', 'Tagbina', 'Surigao del Sur', '8308', 22, 'Male', 'Mangagoy National High School', 'Public', 'School Level', 'College Undergraduate', '15,001 to 20,000'),
+(18, 119, 'Janelle Morales', 74.2, 'FAIL', 2.65, 'Bachelor of Science in Mechanical Engineering', 'Lianga', 'Surigao del Sur', '8307', 23, 'Female', 'Colegio de San Nicolas de Tolentino', 'Private', 'High School Graduate', 'College Graduate', '20,001 to 30,000'),
+(19, 120, 'Mark Mercado', 74.2, 'FAIL', 2.57, 'Bachelor of Science in Mechanical Engineering', 'Bislig City', 'Surigao del Sur', '8311', 24, 'Male', 'Bislig City National High School', 'Public', 'College Undergraduate', 'Post-Graduate', '30,001 to 40,000'),
+(20, 121, 'Alyssa Valdez', 77.2, 'PASS', 2.29, 'Bachelor of Science in Mechanical Engineering', 'Tandag City', 'Surigao del Sur', '8300', 25, 'Female', 'Andres Soriano Colleges of Bislig High School', 'Private', 'College Graduate', 'No Education', '40,001 to 50,000'),
+(21, 122, 'Christian Aguilar', 83.0, 'PASS', 1.88, 'Bachelor of Science in Mechanical Engineering', 'Hinatuan', 'Surigao del Sur', '8310', 21, 'Male', 'Tabon M. Estrella National High School', 'Public', 'Post-Graduate', 'Elementary Level', '50,001 to 100,000 and above'),
+(22, 123, 'Bianca Salazar', 82.4, 'PASS', 1.91, 'Bachelor of Science in Mechanical Engineering', 'Barobo', 'Surigao del Sur', '8309', 22, 'Female', 'De La Salle John Bosco College High School', 'Private', 'No Education', 'Elementary Graduate', 'Below 10,000'),
+(23, 124, 'Paolo Pascual', 74.6, 'PASS', 2.47, 'Bachelor of Science in Mechanical Engineering', 'Tagbina', 'Surigao del Sur', '8308', 23, 'Male', 'Mangagoy National High School', 'Public', 'Elementary Level', 'School Level', '10,000 to 15,000'),
+(24, 125, 'Rochelle Lim', 82.2, 'PASS', 2.0, 'Bachelor of Science in Mechanical Engineering', 'Lianga', 'Surigao del Sur', '8307', 24, 'Female', 'Colegio de San Nicolas de Tolentino', 'Private', 'Elementary Graduate', 'High School Graduate', '15,001 to 20,000'),
+(25, 126, 'John Soriano', 76.0, 'FAIL', 2.61, 'Bachelor of Science in Mechanical Engineering', 'Bislig City', 'Surigao del Sur', '8311', 25, 'Male', 'Bislig City National High School', 'Public', 'School Level', 'College Undergraduate', '20,001 to 30,000'),
+(26, 127, 'Katrina Abad', 83.2, 'PASS', 2.0, 'Bachelor of Science in Mechanical Engineering', 'Tandag City', 'Surigao del Sur', '8300', 21, 'Female', 'Andres Soriano Colleges of Bislig High School', 'Private', 'High School Graduate', 'College Graduate', '30,001 to 40,000');
 
 INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (1, 1, 2.1),
