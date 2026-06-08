@@ -78,3 +78,38 @@ function fetchStudent(PDO $pdo, int $studentId): ?array
 
     return $student ?: null;
 }
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function requireAuth(): void
+{
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: login.php');
+        exit;
+    }
+}
+
+function getLoggedInUser(): ?array
+{
+    return $_SESSION['user'] ?? null;
+}
+
+function getProgramMajorPrefixes(string $program): array
+{
+    $program = strtolower($program);
+    if (str_contains($program, 'mechanical')) {
+        return ['ME', 'AME'];
+    }
+    if (str_contains($program, 'nursing')) {
+        return ['NUR', 'ANUR'];
+    }
+    if (str_contains($program, 'accountancy')) {
+        return ['ACC', 'AACC'];
+    }
+    if (str_contains($program, 'law')) {
+        return ['LAW', 'ALAW'];
+    }
+    return [];
+}

@@ -5,6 +5,9 @@ declare(strict_types=1);
 require __DIR__ . '/config/database.php';
 require __DIR__ . '/functions.php';
 
+// Check auth
+requireAuth();
+
 $studentId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $student = fetchStudent($pdo, $studentId);
 
@@ -23,8 +26,22 @@ $courseStatement = $pdo->prepare(
 $courseStatement->execute(['student_id' => $studentId]);
 $courses = $courseStatement->fetchAll();
 
-$majorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 1));
+$prefixes = getProgramMajorPrefixes($student['program']);
+$majorCourses = array_values(array_filter($courses, function ($course) use ($prefixes) {
+    if ((int) $course['is_major'] !== 1) {
+        return false;
+    }
+    foreach ($prefixes as $prefix) {
+        if (str_starts_with($course['code'], $prefix . ' ')) {
+            return true;
+        }
+    }
+    return false;
+}));
 $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 0));
+
+$user = getLoggedInUser();
+$roleBadgeClass = $user['account_type'] === 'registrar' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
 $hasPrediction = in_array($prediction, ['PASS', 'FAIL'], true);
@@ -60,10 +77,29 @@ $monthlyFamilyIncomeOptions = [
     <link rel="stylesheet" href="assets/app.css">
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
+    <!-- Top Navbar -->
+    <header class="border-b border-slate-200 bg-white shadow-sm">
+        <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-slate-900"><?= e($user['email']) ?></p>
+                    <p class="text-xs text-slate-500 capitalize"><?= e($user['account_type']) ?></p>
+                </div>
+                <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider <?= $roleBadgeClass ?>">
+                    <?= e($user['account_type']) ?>
+                </span>
+                <a href="logout.php" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-100 transition">Sign Out</a>
+            </div>
+        </div>
+    </header>
+
     <main class="mx-auto max-w-6xl px-4 py-8">
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <a href="index.php" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">&larr; Back to students</a>
+                <a href="students.php?program=<?= urlencode($student['program']) ?>" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">&larr; Back to students</a>
                 <h1 class="mt-2 text-3xl font-bold tracking-tight"><?= e($student['full_name']) ?></h1>
                 <p class="mt-1 text-sm text-slate-600">Student ID <?= e($student['student_id']) ?></p>
             </div>
@@ -200,7 +236,7 @@ $monthlyFamilyIncomeOptions = [
             </section>
 
             <div class="sticky bottom-0 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
-                <a href="index.php" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
+                <a href="students.php?program=<?= urlencode($student['program']) ?>" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
                 <button type="submit" name="action" value="save" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save</button>
                 <button type="submit" name="action" value="predict" data-loading-text="Running..." class="inline-flex min-w-36 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
                     <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" data-spinner></span>
