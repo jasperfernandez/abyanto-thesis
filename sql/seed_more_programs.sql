@@ -3,7 +3,7 @@ USE licensure_predictor;
 -- 1. Insert default user accounts
 INSERT IGNORE INTO users (email, password, account_type, program) VALUES
 ('registrar@abyanto.freedev.app', '$2y$10$3eWeLSCbPGAhvkxAwWsecOFcABYdHdTZWZATNrV2vF6v2Uti8eF8m', 'registrar', NULL),
-('program_chair@abyanto.freedev.app', '$2y$10$3eWeLSCbPGAhvkxAwWsecOFcABYdHdTZWZATNrV2vF6v2Uti8eF8m', 'program chair', 'Bachelor of Science in Civil Engineering');
+('program_chair@abyanto.freedev.app', '$2y$10$3eWeLSCbPGAhvkxAwWsecOFcABYdHdTZWZATNrV2vF6v2Uti8eF8m', 'program chair', 'Bachelor of Science in Mechanical Engineering');
 
 -- 2. Insert new major courses
 INSERT INTO courses (id, code, name, is_major, sort_order) VALUES
