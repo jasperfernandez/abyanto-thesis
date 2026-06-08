@@ -121,6 +121,17 @@ def is_major(code):
     return str(code).startswith("ME ") or str(code).startswith("AME ")
 
 
+def include_course(code):
+    code_str = str(code).strip()
+    if code_str.startswith("BES "):
+        return False
+    if code_str.startswith("Math "):
+        return False
+    if code_str.startswith("Nat Sci ") or code_str.startswith("Nat. Sci "):
+        return False
+    return True
+
+
 def grade_value(value):
     if value is None or value == "":
         return None
@@ -131,7 +142,7 @@ workbook = openpyxl.load_workbook(WORKBOOK, data_only=True)
 sheet = workbook.active
 rows = list(sheet.iter_rows(values_only=True))
 headers = [str(header).strip() for header in rows[0]]
-course_codes = headers[4:]
+course_codes = [code for code in headers[4:] if include_course(code)]
 
 lines = [
     "USE licensure_predictor;",
