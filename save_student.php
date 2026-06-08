@@ -27,6 +27,11 @@ $grades = $_POST['grades'] ?? [];
 $user = getLoggedInUser();
 $isRegistrar = $user['account_type'] === 'registrar';
 
+if (!$isRegistrar && $user['program'] !== $student['program']) {
+    header('Location: index.php');
+    exit;
+}
+
 if (!$isRegistrar && $action === 'save') {
     header('Location: student.php?id=' . $id . '&message=' . urlencode('Only registrars can edit grades.'));
     exit;

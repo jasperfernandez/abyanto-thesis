@@ -102,14 +102,32 @@ function getProgramMajorPrefixes(string $program): array
     if (str_contains($program, 'mechanical')) {
         return ['ME', 'AME'];
     }
-    if (str_contains($program, 'nursing')) {
-        return ['NUR', 'ANUR'];
+    if (str_contains($program, 'civil')) {
+        return ['CE', 'ACE'];
     }
-    if (str_contains($program, 'accountancy')) {
-        return ['ACC', 'AACC'];
+    if (str_contains($program, 'electrical')) {
+        return ['EE', 'AEE'];
     }
-    if (str_contains($program, 'law')) {
-        return ['LAW', 'ALAW'];
+    if (str_contains($program, 'filipino')) {
+        return ['FIL', 'AFIL'];
+    }
+    if (str_contains($program, 'english') && !str_contains($program, 'elementary')) {
+        return ['ENG', 'AENG'];
+    }
+    if (str_contains($program, 'mathematics') && !str_contains($program, 'elementary')) {
+        return ['MATH', 'AMATH'];
+    }
+    if (str_contains($program, 'science') && !str_contains($program, 'elementary')) {
+        return ['SCI', 'ASCI'];
+    }
+    if (str_contains($program, 'physical education')) {
+        return ['PE', 'APE'];
+    }
+    if (str_contains($program, 'early childhood')) {
+        return ['ECE', 'AECE'];
+    }
+    if (str_contains($program, 'elementary')) {
+        return ['ELEM', 'AELEM'];
     }
     return [];
 }

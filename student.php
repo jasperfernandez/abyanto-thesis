@@ -42,6 +42,11 @@ $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $cours
 
 $user = getLoggedInUser();
 $isRegistrar = $user['account_type'] === 'registrar';
+
+if (!$isRegistrar && $user['program'] !== $student['program']) {
+    header('Location: index.php');
+    exit;
+}
 $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
@@ -85,6 +90,9 @@ $monthlyFamilyIncomeOptions = [
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
+                <?php if ($isRegistrar): ?>
+                    <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
+                <?php endif; ?>
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-medium text-slate-900"><?= e($user['email']) ?></p>
                     <p class="text-xs text-slate-500 capitalize"><?= e($user['account_type']) ?></p>

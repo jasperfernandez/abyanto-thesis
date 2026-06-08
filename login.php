@@ -30,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id' => $user['id'],
                 'email' => $user['email'],
                 'account_type' => $user['account_type'],
+                'program' => $user['program'] ?? null,
             ];
             header('Location: index.php');
             exit;

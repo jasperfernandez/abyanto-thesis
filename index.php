@@ -9,16 +9,36 @@ require __DIR__ . '/functions.php';
 requireAuth();
 
 // Query program summary statistics
-$programs = $pdo->query(
-    'SELECT 
-        program, 
-        COUNT(*) as total_students,
-        SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
-        SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
-     FROM students
-     GROUP BY program
-     ORDER BY program'
-)->fetchAll();
+$user = getLoggedInUser();
+$isRegistrar = $user['account_type'] === 'registrar';
+
+if ($isRegistrar) {
+    $programs = $pdo->query(
+        'SELECT 
+            program, 
+            COUNT(*) as total_students,
+            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
+            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
+         FROM students
+         GROUP BY program
+         ORDER BY program'
+    )->fetchAll();
+} else {
+    $assignedProgram = $user['program'] ?? '';
+    $statement = $pdo->prepare(
+        'SELECT 
+            program, 
+            COUNT(*) as total_students,
+            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
+            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
+         FROM students
+         WHERE program = :program
+         GROUP BY program
+         ORDER BY program'
+    );
+    $statement->execute(['program' => $assignedProgram]);
+    $programs = $statement->fetchAll();
+}
 
 // Calculate overall summary metrics
 $totalPrograms = count($programs);
@@ -32,8 +52,7 @@ foreach ($programs as $p) {
 
 $overallPassingRate = $totalStudents > 0 ? ($totalPassed / $totalStudents) * 100 : 0;
 
-$user = getLoggedInUser();
-$roleBadgeClass = $user['account_type'] === 'registrar' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
+$roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 ?>
 <!doctype html>
 <html lang="en">
@@ -52,6 +71,9 @@ $roleBadgeClass = $user['account_type'] === 'registrar' ? 'bg-emerald-100 text-e
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
+                <?php if ($isRegistrar): ?>
+                    <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
+                <?php endif; ?>
                 <div class="text-right hidden sm:block">
                     <p class="text-sm font-medium text-slate-900"><?= e($user['email']) ?></p>
                     <p class="text-xs text-slate-500 capitalize"><?= e($user['account_type']) ?></p>

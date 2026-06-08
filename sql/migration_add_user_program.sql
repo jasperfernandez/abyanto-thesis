@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN program VARCHAR(160) NULL AFTER account_type;
