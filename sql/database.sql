@@ -917,7 +917,7 @@ INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (14, 71, 1.4),
 (15, 1, 2.2),
 (15, 2, 3.0),
-(15, 3, 2.8),
+(15, 3, 2.8);
 
 INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (15, 19, 2.6),
@@ -1297,7 +1297,7 @@ INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (21, 71, 1.3),
 (22, 1, 1.6),
 (22, 2, 1.4),
-(22, 3, 1.9),
+(22, 3, 1.9);
 
 INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (22, 19, 2.1),
@@ -1567,7 +1567,7 @@ INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (26, 69, 1.9),
 (26, 70, 1.6),
 (26, 71, 1.0);
-USE licensure_predictor;
+
 
 -- 1. Insert default user accounts
 INSERT INTO users (email, password, account_type) VALUES
@@ -2154,4 +2154,4 @@ INSERT INTO student_grades (student_id, course_id, grade) VALUES
 (71, 101, 1.3),
 (71, 102, 1.6),
 (71, 103, 1.16),
-(71, 104, 1.43),
+(71, 104, 1.43);
