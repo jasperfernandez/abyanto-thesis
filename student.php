@@ -41,7 +41,8 @@ $majorCourses = array_values(array_filter($courses, function ($course) use ($pre
 $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 0));
 
 $user = getLoggedInUser();
-$roleBadgeClass = $user['account_type'] === 'registrar' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
+$isRegistrar = $user['account_type'] === 'registrar';
+$roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
 $hasPrediction = in_array($prediction, ['PASS', 'FAIL'], true);
@@ -217,7 +218,7 @@ $monthlyFamilyIncomeOptions = [
                     <?php foreach ($majorCourses as $course): ?>
                         <label class="block rounded-md border border-emerald-100 bg-emerald-50/60 p-3">
                             <span class="block text-sm font-semibold text-slate-800"><?= e($course['code']) ?></span>
-                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isRegistrar ? '' : 'readonly' ?>>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -229,7 +230,7 @@ $monthlyFamilyIncomeOptions = [
                     <?php foreach ($minorCourses as $course): ?>
                         <label class="block rounded-md border border-slate-200 bg-slate-50 p-3">
                             <span class="block text-sm font-semibold text-slate-800"><?= e($course['code']) ?></span>
-                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isRegistrar ? '' : 'readonly' ?>>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -237,7 +238,9 @@ $monthlyFamilyIncomeOptions = [
 
             <div class="sticky bottom-0 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
                 <a href="students.php?program=<?= urlencode($student['program']) ?>" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
-                <button type="submit" name="action" value="save" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save</button>
+                <?php if ($isRegistrar): ?>
+                    <button type="submit" name="action" value="save" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save</button>
+                <?php endif; ?>
                 <button type="submit" name="action" value="predict" data-loading-text="Running..." class="inline-flex min-w-36 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">
                     <span class="hidden h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" data-spinner></span>
                     <span data-label>Run Prediction</span>

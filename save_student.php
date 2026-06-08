@@ -24,6 +24,14 @@ if ($student === null) {
 $action = $_POST['action'] ?? 'save';
 $grades = $_POST['grades'] ?? [];
 
+$user = getLoggedInUser();
+$isRegistrar = $user['account_type'] === 'registrar';
+
+if (!$isRegistrar && $action === 'save') {
+    header('Location: student.php?id=' . $id . '&message=' . urlencode('Only registrars can edit grades.'));
+    exit;
+}
+
 $pdo->beginTransaction();
 
 try {
@@ -68,19 +76,21 @@ try {
         'id' => $id,
     ]);
 
-    $upsertGrade = $pdo->prepare(
-        'INSERT INTO student_grades (student_id, course_id, grade)
-         VALUES (:student_id, :course_id, :grade)
-         ON DUPLICATE KEY UPDATE grade = VALUES(grade)'
-    );
+    if ($isRegistrar) {
+        $upsertGrade = $pdo->prepare(
+            'INSERT INTO student_grades (student_id, course_id, grade)
+             VALUES (:student_id, :course_id, :grade)
+             ON DUPLICATE KEY UPDATE grade = VALUES(grade)'
+        );
 
-    foreach ($grades as $courseId => $grade) {
-        $normalizedGrade = trim((string) $grade);
-        $upsertGrade->execute([
-            'student_id' => $id,
-            'course_id' => (int) $courseId,
-            'grade' => $normalizedGrade === '' ? null : (float) $normalizedGrade,
-        ]);
+        foreach ($grades as $courseId => $grade) {
+            $normalizedGrade = trim((string) $grade);
+            $upsertGrade->execute([
+                'student_id' => $id,
+                'course_id' => (int) $courseId,
+                'grade' => $normalizedGrade === '' ? null : (float) $normalizedGrade,
+            ]);
+        }
     }
 
     $message = 'Student information saved.';
