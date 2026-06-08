@@ -5,12 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/config/database.php';
 require __DIR__ . '/functions.php';
 
-// Redirect if already logged in
-if (isset($_SESSION['user_id'])) {
-    header('Location: index.php');
-    exit;
-}
-
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

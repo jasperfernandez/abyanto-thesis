@@ -40,13 +40,29 @@ $majorCourses = array_values(array_filter($courses, function ($course) use ($pre
 }));
 $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 0));
 
-$user = getLoggedInUser();
+$user = getLoggedInUser($pdo);
 $isRegistrar = $user['account_type'] === 'registrar';
 
 if (!$isRegistrar && $user['program'] !== $student['program']) {
     header('Location: index.php');
     exit;
 }
+
+$programSummaryStatement = $pdo->prepare(
+    'SELECT
+        COUNT(*) as total_students,
+        SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
+        SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
+     FROM students
+     WHERE program = :program'
+);
+$programSummaryStatement->execute(['program' => $student['program']]);
+$programSummary = $programSummaryStatement->fetch() ?: [
+    'total_students' => 0,
+    'passed_students' => 0,
+    'failed_students' => 0,
+];
+
 $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
@@ -258,18 +274,38 @@ $monthlyFamilyIncomeOptions = [
     </main>
 
     <?php if ($hasPrediction): ?>
-        <dialog id="predictionDialog" class="w-[min(92vw,28rem)] rounded-xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/50">
+        <dialog id="predictionDialog" class="w-[min(92vw,36rem)] rounded-xl border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/50">
             <div class="p-6">
                 <div class="flex items-start gap-4">
                     <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full <?= $prediction === 'PASS' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' ?>">
                         <span class="text-xl font-bold"><?= $prediction === 'PASS' ? '✓' : '!' ?></span>
                     </div>
-                    <div>
+                    <div class="min-w-0">
                         <p class="text-sm font-medium uppercase tracking-wide text-slate-500">Prediction Result</p>
                         <h2 class="mt-1 text-3xl font-bold <?= $prediction === 'PASS' ? 'text-emerald-700' : 'text-rose-700' ?>"><?= e($prediction) ?></h2>
                         <p class="mt-2 text-sm text-slate-600"><?= e($student['full_name']) ?>'s record has been updated.</p>
                     </div>
                 </div>
+
+                <div class="mt-5 rounded-lg border <?= $prediction === 'PASS' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800' ?> px-4 py-3 text-sm font-bold uppercase tracking-wide">
+                    <?= $prediction === 'PASS' ? 'CLASSIFICATION: BASELINE SAFE (PASS TRAJECTORY)' : 'AT-RISK (FAIL TRAJECTORY)' ?>
+                </div>
+
+                <div class="mt-5 grid gap-3 sm:grid-cols-3">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[0.7rem] font-semibold uppercase tracking-wide text-slate-500">Total Students Evaluated</p>
+                        <p class="mt-2 text-2xl font-bold text-slate-950"><?= (int) $programSummary['total_students'] ?></p>
+                    </div>
+                    <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                        <p class="text-[0.7rem] font-semibold uppercase tracking-wide text-emerald-700">Total Cleared (Safe)</p>
+                        <p class="mt-2 text-2xl font-bold text-emerald-700"><?= (int) $programSummary['passed_students'] ?></p>
+                    </div>
+                    <div class="rounded-lg border border-rose-200 bg-rose-50 p-4">
+                        <p class="text-[0.7rem] font-semibold uppercase tracking-wide text-rose-700">Total At-Risk Students</p>
+                        <p class="mt-2 text-2xl font-bold text-rose-700"><?= (int) $programSummary['failed_students'] ?></p>
+                    </div>
+                </div>
+
                 <form method="dialog" class="mt-6 flex justify-end">
                     <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800">Close</button>
                 </form>

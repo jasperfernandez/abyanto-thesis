@@ -91,8 +91,30 @@ function requireAuth(): void
     }
 }
 
-function getLoggedInUser(): ?array
+function getLoggedInUser(?PDO $pdo = null): ?array
 {
+    if (!isset($_SESSION['user_id'])) {
+        return null;
+    }
+
+    if ($pdo !== null) {
+        $statement = $pdo->prepare('SELECT id, email, account_type, program FROM users WHERE id = :id LIMIT 1');
+        $statement->execute(['id' => (int) $_SESSION['user_id']]);
+        $user = $statement->fetch();
+
+        if (!$user) {
+            unset($_SESSION['user_id'], $_SESSION['user']);
+            return null;
+        }
+
+        $_SESSION['user'] = [
+            'id' => $user['id'],
+            'email' => $user['email'],
+            'account_type' => $user['account_type'],
+            'program' => $user['program'] ?? null,
+        ];
+    }
+
     return $_SESSION['user'] ?? null;
 }
 

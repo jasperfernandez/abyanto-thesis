@@ -15,7 +15,7 @@ if ($program === '') {
     exit;
 }
 
-$user = getLoggedInUser();
+$user = getLoggedInUser($pdo);
 $isRegistrar = $user['account_type'] === 'registrar';
 
 if (!$isRegistrar && $user['program'] !== $program) {

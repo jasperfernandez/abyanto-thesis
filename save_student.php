@@ -24,7 +24,7 @@ if ($student === null) {
 $action = $_POST['action'] ?? 'save';
 $grades = $_POST['grades'] ?? [];
 
-$user = getLoggedInUser();
+$user = getLoggedInUser($pdo);
 $isRegistrar = $user['account_type'] === 'registrar';
 
 if (!$isRegistrar && $user['program'] !== $student['program']) {

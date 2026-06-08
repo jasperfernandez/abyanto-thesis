@@ -9,7 +9,7 @@ require __DIR__ . '/functions.php';
 requireAuth();
 
 // Query program summary statistics
-$user = getLoggedInUser();
+$user = getLoggedInUser($pdo);
 $isRegistrar = $user['account_type'] === 'registrar';
 
 if ($isRegistrar) {
@@ -41,16 +41,15 @@ if ($isRegistrar) {
 }
 
 // Calculate overall summary metrics
-$totalPrograms = count($programs);
 $totalStudents = 0;
 $totalPassed = 0;
+$totalFailed = 0;
 
 foreach ($programs as $p) {
     $totalStudents += (int) $p['total_students'];
     $totalPassed += (int) $p['passed_students'];
+    $totalFailed += (int) $p['failed_students'];
 }
-
-$overallPassingRate = $totalStudents > 0 ? ($totalPassed / $totalStudents) * 100 : 0;
 
 $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
 ?>
@@ -97,21 +96,16 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
 
         <div class="mb-8 grid gap-4 grid-cols-1 sm:grid-cols-3">
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Programs</p>
-                <p class="mt-2 text-3xl font-bold text-slate-950"><?= $totalPrograms ?></p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Students</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Students Evaluated</p>
                 <p class="mt-2 text-3xl font-bold text-slate-950"><?= $totalStudents ?></p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Overall Passing Rate</p>
-                <p class="mt-2 text-3xl font-bold text-slate-950">
-                    <?= number_format($overallPassingRate, 1) ?>%
-                    <span class="text-xs font-normal text-slate-500 block sm:inline sm:ml-1">
-                        (<?= $totalPassed ?> of <?= $totalStudents ?> passing)
-                    </span>
-                </p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Cleared (Safe)</p>
+                <p class="mt-2 text-3xl font-bold text-emerald-700"><?= $totalPassed ?></p>
+            </div>
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Total At-Risk Students</p>
+                <p class="mt-2 text-3xl font-bold text-rose-700"><?= $totalFailed ?></p>
             </div>
         </div>
 

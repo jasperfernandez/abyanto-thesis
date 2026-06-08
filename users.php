@@ -7,7 +7,7 @@ require __DIR__ . '/functions.php';
 
 requireAuth();
 
-$user = getLoggedInUser();
+$user = getLoggedInUser($pdo);
 $isRegistrar = $user['account_type'] === 'registrar';
 
 if (!$isRegistrar) {
