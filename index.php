@@ -11,53 +11,44 @@ requireAuth();
 // Query program summary statistics
 $user = getLoggedInUser($pdo);
 $isAdministrator = isAdministrator($user);
-$isCollegeDean = isCollegeDean($user);
+$canManageUsers = isGlobalAdministrator($user);
+$campusScopes = userCampusScopes($user);
 
-if ($isAdministrator) {
-    $programs = $pdo->query(
-        'SELECT 
-            program, 
-            college,
-            COUNT(*) as total_students,
-            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
-            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
-         FROM students
-         GROUP BY program, college
-         ORDER BY program'
-    )->fetchAll();
-} elseif ($isCollegeDean) {
-    $assignedCollege = $user['college'] ?? '';
-    $statement = $pdo->prepare(
-        'SELECT
-            program,
-            college,
-            COUNT(*) as total_students,
-            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
-            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
-         FROM students
-         WHERE college = :college
-         GROUP BY program, college
-         ORDER BY program'
-    );
-    $statement->execute(['college' => $assignedCollege]);
-    $programs = $statement->fetchAll();
-} else {
-    $assignedProgram = $user['program'] ?? '';
-    $statement = $pdo->prepare(
-        'SELECT 
-            program, 
-            college,
-            COUNT(*) as total_students,
-            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
-            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
-         FROM students
-         WHERE program = :program
-         GROUP BY program, college
-         ORDER BY program'
-    );
-    $statement->execute(['program' => $assignedProgram]);
-    $programs = $statement->fetchAll();
+$programDirectorySql = 'SELECT
+        campus,
+        program,
+        college,
+        COUNT(*) as total_students,
+        SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
+        SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
+     FROM students
+';
+$programDirectoryParams = [];
+
+if ($isAdministrator && count($campusScopes) > 0) {
+    $campusPlaceholders = [];
+
+    foreach ($campusScopes as $index => $campus) {
+        $placeholder = 'campus_' . $index;
+        $campusPlaceholders[] = ':' . $placeholder;
+        $programDirectoryParams[$placeholder] = $campus;
+    }
+
+    $programDirectorySql .= ' WHERE campus IN (' . implode(', ', $campusPlaceholders) . ')';
 }
+
+$programDirectorySql .= '
+     GROUP BY campus, program, college
+     ORDER BY campus, program';
+
+$programDirectoryStatement = $pdo->prepare($programDirectorySql);
+$programDirectoryStatement->execute($programDirectoryParams);
+$allPrograms = $programDirectoryStatement->fetchAll();
+
+$programs = array_values(array_filter(
+    $allPrograms,
+    fn ($program) => userCanAccessProgram($user, $program)
+));
 
 // Calculate overall summary metrics
 $totalStudents = 0;
@@ -89,7 +80,7 @@ $roleBadgeClass = roleBadgeClass($user);
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isAdministrator): ?>
+                <?php if ($canManageUsers): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -135,6 +126,7 @@ $roleBadgeClass = roleBadgeClass($user);
                     <thead class="bg-slate-100">
                         <tr>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Program Name</th>
+                            <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Campus</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">College</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Students</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Passed</th>
@@ -150,8 +142,9 @@ $roleBadgeClass = roleBadgeClass($user);
                                 $failed = (int) $program['failed_students'];
                                 $passingRate = $total > 0 ? ($passed / $total) * 100 : 0;
                             ?>
-                            <tr class="cursor-pointer transition hover:bg-emerald-50" data-href="students.php?program=<?= urlencode($program['program']) ?>" tabindex="0">
+                            <tr class="cursor-pointer transition hover:bg-emerald-50" data-href="students.php?program=<?= urlencode($program['program']) ?>&campus=<?= urlencode($program['campus']) ?>" tabindex="0">
                                 <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-900"><?= e($program['program']) ?></td>
+                                <td class="whitespace-nowrap px-5 py-4 text-slate-700"><?= e($program['campus']) ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-700"><?= e($program['college']) ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-700"><?= $total ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-700">

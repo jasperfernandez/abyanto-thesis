@@ -13,9 +13,11 @@ CREATE TABLE users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(191) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  account_type ENUM('administrator', 'program chair', 'college dean') NOT NULL,
+  account_type ENUM('administrator', 'program coor', 'college dean', 'department chair') NOT NULL,
   program VARCHAR(160) NULL,
   college VARCHAR(160) NULL,
+  campus VARCHAR(120) NULL,
+  campuses TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -27,6 +29,7 @@ CREATE TABLE students (
   gwa DECIMAL(5,2) NOT NULL,
   licensure_result ENUM('PASS', 'FAIL') NOT NULL DEFAULT 'FAIL',
   major_average DECIMAL(4,2) NULL,
+  campus VARCHAR(120) NOT NULL,
   program VARCHAR(160) NOT NULL,
   college VARCHAR(160) NOT NULL,
   city_municipality VARCHAR(120) NULL,
@@ -41,8 +44,10 @@ CREATE TABLE students (
   monthly_family_income VARCHAR(80) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_students_campus (campus),
   INDEX idx_students_college (college),
-  INDEX idx_students_program_college (program, college)
+  INDEX idx_students_program_college (program, college),
+  INDEX idx_students_campus_program_college (campus, program, college)
 ) ENGINE=InnoDB;
 
 CREATE TABLE courses (

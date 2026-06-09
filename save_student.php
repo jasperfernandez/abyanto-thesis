@@ -26,6 +26,7 @@ $grades = $_POST['grades'] ?? [];
 
 $user = getLoggedInUser($pdo);
 $isAdministrator = isAdministrator($user);
+$isGlobalAdministrator = isGlobalAdministrator($user);
 
 if (!userCanAccessStudent($user, $student)) {
     header('Location: index.php');
@@ -46,6 +47,10 @@ try {
         $secondarySchoolType = trim((string) ($_POST['secondary_school_type'] ?? ''));
 
         $program = trim((string) ($_POST['program'] ?? ''));
+        $campus = $isGlobalAdministrator
+            ? trim((string) ($_POST['campus'] ?? ''))
+            : (string) $student['campus'];
+        $campus = $campus === '' ? (string) $student['campus'] : $campus;
         $college = trim((string) ($_POST['college'] ?? ''));
         $college = $college === '' ? collegeForProgram($program) : $college;
 
@@ -54,6 +59,7 @@ try {
              SET student_id = :student_id,
                  full_name = :full_name,
                  gwa = :gwa,
+                 campus = :campus,
                  program = :program,
                  college = :college,
                  city_municipality = :city_municipality,
@@ -73,6 +79,7 @@ try {
             'student_id' => trim((string) ($_POST['student_id'] ?? '')),
             'full_name' => trim((string) ($_POST['full_name'] ?? '')),
             'gwa' => (float) ($_POST['gwa'] ?? 0),
+            'campus' => $campus,
             'program' => $program,
             'college' => $college,
             'city_municipality' => trim((string) ($_POST['city_municipality'] ?? '')),

@@ -9,6 +9,7 @@ require __DIR__ . '/functions.php';
 requireAuth();
 
 $program = $_GET['program'] ?? '';
+$campus = $_GET['campus'] ?? '';
 
 if ($program === '') {
     header('Location: index.php');
@@ -16,16 +17,21 @@ if ($program === '') {
 }
 
 $user = getLoggedInUser($pdo);
-$isAdministrator = isAdministrator($user);
-$isCollegeDean = isCollegeDean($user);
+$canManageUsers = isGlobalAdministrator($user);
 
 $programStatement = $pdo->prepare(
-    'SELECT program, college
+    'SELECT campus, program, college
      FROM students
      WHERE program = :program
+       AND (:campus_filter = "" OR campus = :campus_match)
+     ORDER BY campus
      LIMIT 1'
 );
-$programStatement->execute(['program' => $program]);
+$programStatement->execute([
+    'program' => $program,
+    'campus_filter' => $campus,
+    'campus_match' => $campus,
+]);
 $programRecord = $programStatement->fetch();
 
 if (!$programRecord) {
@@ -33,25 +39,19 @@ if (!$programRecord) {
     exit;
 }
 
-if (
-    !$isAdministrator
-    && (!$isCollegeDean || $user['college'] !== $programRecord['college'])
-    && ($user['program'] ?? '') !== $program
-) {
+if (!userCanAccessProgram($user, $programRecord)) {
     header('Location: index.php');
     exit;
 }
 
-$sql = 'SELECT id, student_id, full_name, gwa, licensure_result, college
+$campus = $programRecord['campus'];
+
+$sql = 'SELECT id, student_id, full_name, gwa, licensure_result, campus, college
      FROM students
      WHERE program = :program
+       AND campus = :campus
 ';
-$params = ['program' => $program];
-
-if ($isCollegeDean) {
-    $sql .= ' AND college = :college';
-    $params['college'] = $user['college'];
-}
+$params = ['program' => $program, 'campus' => $campus];
 
 $sql .= ' ORDER BY CAST(student_id AS UNSIGNED), student_id';
 
@@ -78,7 +78,7 @@ $roleBadgeClass = roleBadgeClass($user);
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isAdministrator): ?>
+                <?php if ($canManageUsers): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -101,7 +101,7 @@ $roleBadgeClass = roleBadgeClass($user);
             <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight"><?= e($program) ?></h1>
-                    <p class="mt-1 text-sm text-slate-600"><?= e($programRecord['college']) ?> student records</p>
+                    <p class="mt-1 text-sm text-slate-600"><?= e($programRecord['campus']) ?> · <?= e($programRecord['college']) ?> student records</p>
                 </div>
                 <div class="rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm min-w-32">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Students</p>

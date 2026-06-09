@@ -1,6 +1,6 @@
 # Licensure Predictor
 
-Plain PHP, MySQL, Tailwind CDN, CSS, and JavaScript app for editing Mechanical Engineering student grades and predicting licensure result.
+Plain PHP, MySQL, Tailwind CDN, CSS, and JavaScript app for campus-scoped licensure prediction across CTE and CET programs.
 
 ## Setup
 
@@ -30,4 +30,4 @@ php -S 127.0.0.1:8000
 
 ## Prediction Rule
 
-The prediction uses only major course grades. In this build, major courses are course codes beginning with `ME ` or `AME `. If the major-course average is greater than or equal to `2.49`, the prediction is `FAIL`; otherwise it is `PASS`.
+The prediction uses only courses flagged as major courses. If the major-course average is greater than or equal to `2.49`, the prediction is `FAIL`; otherwise it is `PASS`.

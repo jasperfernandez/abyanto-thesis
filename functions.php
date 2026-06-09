@@ -28,22 +28,88 @@ function isAdministrator(array $user): bool
     return $user['account_type'] === 'administrator';
 }
 
+function isGlobalAdministrator(array $user): bool
+{
+    return isAdministrator($user) && count(userCampusScopes($user)) === 0;
+}
+
 function isCollegeDean(array $user): bool
 {
     return $user['account_type'] === 'college dean';
 }
 
+function isDepartmentChair(array $user): bool
+{
+    return $user['account_type'] === 'department chair';
+}
+
+function isProgramCoor(array $user): bool
+{
+    return $user['account_type'] === 'program coor';
+}
+
+function userCampusScopes(array $user): array
+{
+    $campuses = [];
+    $rawCampuses = trim((string) ($user['campuses'] ?? ''));
+
+    if ($rawCampuses !== '') {
+        $decoded = json_decode($rawCampuses, true);
+
+        if (is_array($decoded)) {
+            $campuses = $decoded;
+        } else {
+            $campuses = preg_split('/\s*,\s*/', $rawCampuses) ?: [];
+        }
+    }
+
+    $singleCampus = trim((string) ($user['campus'] ?? ''));
+
+    if ($singleCampus !== '') {
+        $campuses[] = $singleCampus;
+    }
+
+    $campuses = array_values(array_unique(array_filter(array_map(
+        fn ($campus) => trim((string) $campus),
+        $campuses
+    ))));
+
+    return $campuses;
+}
+
+function userHasCampusScope(array $user, string $campus): bool
+{
+    $campusScopes = userCampusScopes($user);
+
+    return count($campusScopes) === 0 || in_array($campus, $campusScopes, true);
+}
+
+function userCanAccessProgram(array $user, array $program): bool
+{
+    $campus = (string) ($program['campus'] ?? '');
+
+    if (isAdministrator($user)) {
+        return userHasCampusScope($user, $campus);
+    }
+
+    if (isCollegeDean($user) || isDepartmentChair($user)) {
+        return ($user['college'] ?? '') !== ''
+            && $user['college'] === ($program['college'] ?? '')
+            && userHasCampusScope($user, $campus);
+    }
+
+    if (isProgramCoor($user)) {
+        return ($user['program'] ?? '') !== ''
+            && $user['program'] === ($program['program'] ?? '')
+            && userHasCampusScope($user, $campus);
+    }
+
+    return false;
+}
+
 function userCanAccessStudent(array $user, array $student): bool
 {
-    if (isAdministrator($user)) {
-        return true;
-    }
-
-    if (isCollegeDean($user)) {
-        return ($user['college'] ?? '') !== '' && $user['college'] === $student['college'];
-    }
-
-    return ($user['program'] ?? '') !== '' && $user['program'] === $student['program'];
+    return userCanAccessProgram($user, $student);
 }
 
 function roleBadgeClass(array $user): string
@@ -54,6 +120,10 @@ function roleBadgeClass(array $user): string
 
     if (isCollegeDean($user)) {
         return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    }
+
+    if (isDepartmentChair($user)) {
+        return 'bg-amber-100 text-amber-800 border-amber-200';
     }
 
     return 'bg-indigo-100 text-indigo-800 border-indigo-200';
@@ -147,7 +217,7 @@ function getLoggedInUser(?PDO $pdo = null): ?array
     }
 
     if ($pdo !== null) {
-        $statement = $pdo->prepare('SELECT id, email, account_type, program, college FROM users WHERE id = :id LIMIT 1');
+        $statement = $pdo->prepare('SELECT id, email, account_type, program, college, campus, campuses FROM users WHERE id = :id LIMIT 1');
         $statement->execute(['id' => (int) $_SESSION['user_id']]);
         $user = $statement->fetch();
 
@@ -162,6 +232,8 @@ function getLoggedInUser(?PDO $pdo = null): ?array
             'account_type' => $user['account_type'],
             'program' => $user['program'] ?? null,
             'college' => $user['college'] ?? null,
+            'campus' => $user['campus'] ?? null,
+            'campuses' => $user['campuses'] ?? null,
         ];
     }
 

@@ -8,7 +8,7 @@ require __DIR__ . '/functions.php';
 requireAuth();
 
 $user = getLoggedInUser($pdo);
-$isAdministrator = isAdministrator($user);
+$isAdministrator = isGlobalAdministrator($user);
 
 if (!$isAdministrator) {
     header('Location: index.php');
@@ -23,14 +23,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $program = $program === '' ? null : $program;
     $college = trim((string) ($_POST['college'] ?? ''));
     $college = $college === '' ? null : $college;
+    $campus = trim((string) ($_POST['campus'] ?? ''));
+    $campus = $campus === '' ? null : $campus;
+    $campuses = $_POST['campuses'] ?? [];
+    $campuses = is_array($campuses) ? array_values(array_filter(array_map('trim', $campuses))) : [];
+    $campuses = count($campuses) > 0 ? json_encode($campuses) : null;
 
-    $update = $pdo->prepare('UPDATE users SET program = :program, college = :college WHERE id = :id');
-    $update->execute(['program' => $program, 'college' => $college, 'id' => $userId]);
+    $update = $pdo->prepare('UPDATE users SET program = :program, college = :college, campus = :campus, campuses = :campuses WHERE id = :id');
+    $update->execute([
+        'program' => $program,
+        'college' => $college,
+        'campus' => $campus,
+        'campuses' => $campuses,
+        'id' => $userId,
+    ]);
     $message = 'User updated.';
 }
 
 $users = $pdo->query(
-    'SELECT id, email, account_type, program, college FROM users ORDER BY account_type, email'
+    'SELECT id, email, account_type, program, college, campus, campuses FROM users ORDER BY account_type, email'
 )->fetchAll();
 
 $programs = $pdo->query(
@@ -39,6 +50,10 @@ $programs = $pdo->query(
 
 $colleges = $pdo->query(
     'SELECT DISTINCT college FROM students WHERE college IS NOT NULL ORDER BY college'
+)->fetchAll();
+
+$campuses = $pdo->query(
+    'SELECT DISTINCT campus FROM students WHERE campus IS NOT NULL ORDER BY campus'
 )->fetchAll();
 
 $roleBadgeClass = roleBadgeClass($user);
@@ -77,7 +92,7 @@ $roleBadgeClass = roleBadgeClass($user);
                 &larr; Back to Programs
             </a>
             <h1 class="mt-4 text-3xl font-bold tracking-tight">Manage Users</h1>
-            <p class="mt-1 text-sm text-slate-600">Assign programs to program chairs and colleges to college deans</p>
+            <p class="mt-1 text-sm text-slate-600">Assign campus, program, and college scopes to user accounts</p>
         </div>
 
         <?php if ($message !== ''): ?>
@@ -103,11 +118,18 @@ $roleBadgeClass = roleBadgeClass($user);
                                 <td class="whitespace-nowrap px-5 py-4 font-medium"><?= e($u['email']) ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 capitalize"><?= e($u['account_type']) ?></td>
                                 <td class="whitespace-nowrap px-5 py-4">
-                                    <?php if ($u['account_type'] === 'program chair'): ?>
-                                        <form method="post" class="flex items-center gap-2">
+                                    <?php if ($u['account_type'] === 'program coor'): ?>
+                                        <form method="post" class="flex flex-wrap items-center gap-2">
                                             <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
                                             <input type="hidden" name="college" value="">
-                                            <select name="program" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                            <input type="hidden" name="campuses[]" value="">
+                                            <select name="campus" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                                <option value="">-- Campus --</option>
+                                                <?php foreach ($campuses as $c): ?>
+                                                    <option value="<?= e($c['campus']) ?>"<?= selectedOption($u['campus'], $c['campus']) ?>><?= e($c['campus']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <select name="program" class="max-w-md rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                                                 <option value="">-- None --</option>
                                                 <?php foreach ($programs as $p): ?>
                                                     <option value="<?= e($p['program']) ?>"<?= selectedOption($u['program'], $p['program']) ?>><?= e($p['program']) ?></option>
@@ -116,9 +138,35 @@ $roleBadgeClass = roleBadgeClass($user);
                                             <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">Save</button>
                                         </form>
                                     <?php elseif ($u['account_type'] === 'college dean'): ?>
-                                        <form method="post" class="flex items-center gap-2">
+                                        <form method="post" class="flex flex-wrap items-center gap-2">
                                             <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
                                             <input type="hidden" name="program" value="">
+                                            <input type="hidden" name="campus" value="">
+                                            <select name="college" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                                <option value="">-- None --</option>
+                                                <?php foreach ($colleges as $c): ?>
+                                                    <option value="<?= e($c['college']) ?>"<?= selectedOption($u['college'], $c['college']) ?>><?= e($c['college']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <?php $selectedCampuses = userCampusScopes($u); ?>
+                                            <select name="campuses[]" multiple size="3" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                                <?php foreach ($campuses as $c): ?>
+                                                    <option value="<?= e($c['campus']) ?>"<?= in_array($c['campus'], $selectedCampuses, true) ? ' selected' : '' ?>><?= e($c['campus']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">Save</button>
+                                        </form>
+                                    <?php elseif ($u['account_type'] === 'department chair'): ?>
+                                        <form method="post" class="flex flex-wrap items-center gap-2">
+                                            <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
+                                            <input type="hidden" name="program" value="">
+                                            <input type="hidden" name="campuses[]" value="">
+                                            <select name="campus" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                                <option value="">-- Campus --</option>
+                                                <?php foreach ($campuses as $c): ?>
+                                                    <option value="<?= e($c['campus']) ?>"<?= selectedOption($u['campus'], $c['campus']) ?>><?= e($c['campus']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                             <select name="college" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                                                 <option value="">-- None --</option>
                                                 <?php foreach ($colleges as $c): ?>
@@ -127,14 +175,17 @@ $roleBadgeClass = roleBadgeClass($user);
                                             </select>
                                             <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">Save</button>
                                         </form>
+                                    <?php elseif ($u['account_type'] === 'administrator' && !empty($u['campus'])): ?>
+                                        <span class="text-sm text-slate-600"><?= e($u['campus']) ?></span>
                                     <?php else: ?>
                                         <span class="text-sm text-slate-500">All programs</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4">
                                     <?php if (
-                                        ($u['account_type'] === 'program chair' && $u['program'] === null)
-                                        || ($u['account_type'] === 'college dean' && $u['college'] === null)
+                                        ($u['account_type'] === 'program coor' && ($u['program'] === null || $u['campus'] === null))
+                                        || ($u['account_type'] === 'college dean' && ($u['college'] === null || count(userCampusScopes($u)) === 0))
+                                        || ($u['account_type'] === 'department chair' && ($u['college'] === null || $u['campus'] === null))
                                     ): ?>
                                         <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Needs setup</span>
                                     <?php endif; ?>

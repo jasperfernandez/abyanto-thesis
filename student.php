@@ -35,6 +35,8 @@ $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $cours
 
 $user = getLoggedInUser($pdo);
 $isAdministrator = isAdministrator($user);
+$canManageUsers = isGlobalAdministrator($user);
+$canEditCampus = isGlobalAdministrator($user);
 
 if (!userCanAccessStudent($user, $student)) {
     header('Location: index.php');
@@ -47,9 +49,13 @@ $programSummaryStatement = $pdo->prepare(
         SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
         SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
      FROM students
-     WHERE program = :program'
+     WHERE program = :program
+       AND campus = :campus'
 );
-$programSummaryStatement->execute(['program' => $student['program']]);
+$programSummaryStatement->execute([
+    'program' => $student['program'],
+    'campus' => $student['campus'],
+]);
 $programSummary = $programSummaryStatement->fetch() ?: [
     'total_students' => 0,
     'passed_students' => 0,
@@ -99,7 +105,7 @@ $monthlyFamilyIncomeOptions = [
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isAdministrator): ?>
+                <?php if ($canManageUsers): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -117,7 +123,7 @@ $monthlyFamilyIncomeOptions = [
     <main class="mx-auto max-w-6xl px-4 py-8">
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <a href="students.php?program=<?= urlencode($student['program']) ?>" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">&larr; Back to students</a>
+                <a href="students.php?program=<?= urlencode($student['program']) ?>&campus=<?= urlencode($student['campus']) ?>" class="text-sm font-medium text-emerald-700 hover:text-emerald-800">&larr; Back to students</a>
                 <h1 class="mt-2 text-3xl font-bold tracking-tight"><?= e($student['full_name']) ?></h1>
                 <p class="mt-1 text-sm text-slate-600">Student ID <?= e($student['student_id']) ?></p>
             </div>
@@ -154,6 +160,10 @@ $monthlyFamilyIncomeOptions = [
                     <label class="block">
                         <span class="text-sm font-medium text-slate-700">Program</span>
                         <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="program" value="<?= e($student['program']) ?>" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">Campus</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="campus" value="<?= e($student['campus']) ?>" required <?= $canEditCampus ? '' : 'readonly' ?>>
                     </label>
                     <label class="block">
                         <span class="text-sm font-medium text-slate-700">College</span>
@@ -258,7 +268,7 @@ $monthlyFamilyIncomeOptions = [
             </section>
 
             <div class="sticky bottom-0 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
-                <a href="students.php?program=<?= urlencode($student['program']) ?>" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
+                <a href="students.php?program=<?= urlencode($student['program']) ?>&campus=<?= urlencode($student['campus']) ?>" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
                 <?php if ($isAdministrator): ?>
                     <button type="submit" name="action" value="save" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save</button>
                 <?php endif; ?>
