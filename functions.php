@@ -18,8 +18,10 @@ function recalculateMajorAverage(PDO $pdo, int $studentId): array
         'SELECT AVG(sg.grade) AS major_average, COUNT(*) AS major_count
          FROM student_grades sg
          INNER JOIN courses c ON c.id = sg.course_id
+         INNER JOIN students s ON s.id = sg.student_id
          WHERE sg.student_id = :student_id
            AND c.is_major = 1
+           AND c.program = s.program
            AND sg.grade IS NOT NULL'
     );
     $statement->execute(['student_id' => $studentId]);
@@ -125,10 +127,10 @@ function getProgramMajorPrefixes(string $program): array
         return ['ME', 'AME'];
     }
     if (str_contains($program, 'civil')) {
-        return ['CE', 'ACE'];
+        return ['CE', 'Chem', 'ES', 'Geol', 'Math', 'Physics'];
     }
     if (str_contains($program, 'electrical')) {
-        return ['EE', 'AEE'];
+        return ['AEE', 'BES', 'ECE', 'EE', 'MATH', 'Math', 'NAT SCI'];
     }
     if (str_contains($program, 'filipino')) {
         return ['FIL', 'AFIL'];

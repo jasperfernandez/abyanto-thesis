@@ -43,13 +43,16 @@ CREATE TABLE students (
 
 CREATE TABLE courses (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  code VARCHAR(40) NOT NULL UNIQUE,
+  code VARCHAR(40) NOT NULL,
   name VARCHAR(120) NOT NULL,
   is_major TINYINT(1) NOT NULL DEFAULT 0,
+  program VARCHAR(160) NULL,
   sort_order INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_course_program_code (program, code),
   INDEX idx_courses_major (is_major),
+  INDEX idx_courses_program (program),
   INDEX idx_courses_sort (sort_order)
 ) ENGINE=InnoDB;
 

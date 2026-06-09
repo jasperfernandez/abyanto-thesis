@@ -21,23 +21,16 @@ $courseStatement = $pdo->prepare(
      FROM courses c
      LEFT JOIN student_grades sg
        ON sg.course_id = c.id AND sg.student_id = :student_id
+     WHERE c.program IS NULL OR c.program = :program
      ORDER BY c.sort_order, c.code'
 );
-$courseStatement->execute(['student_id' => $studentId]);
+$courseStatement->execute([
+    'student_id' => $studentId,
+    'program' => $student['program'],
+]);
 $courses = $courseStatement->fetchAll();
 
-$prefixes = getProgramMajorPrefixes($student['program']);
-$majorCourses = array_values(array_filter($courses, function ($course) use ($prefixes) {
-    if ((int) $course['is_major'] !== 1) {
-        return false;
-    }
-    foreach ($prefixes as $prefix) {
-        if (str_starts_with($course['code'], $prefix . ' ')) {
-            return true;
-        }
-    }
-    return false;
-}));
+$majorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 1));
 $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 0));
 
 $user = getLoggedInUser($pdo);
