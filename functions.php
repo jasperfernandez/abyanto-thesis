@@ -12,6 +12,53 @@ function selectedOption(?string $currentValue, string $optionValue): string
     return $currentValue === $optionValue ? ' selected' : '';
 }
 
+function collegeForProgram(string $program): string
+{
+    $program = strtolower($program);
+
+    if (str_contains($program, 'engineering')) {
+        return 'College of Engineering';
+    }
+
+    return 'College of Teacher Education';
+}
+
+function isAdministrator(array $user): bool
+{
+    return $user['account_type'] === 'administrator';
+}
+
+function isCollegeDean(array $user): bool
+{
+    return $user['account_type'] === 'college dean';
+}
+
+function userCanAccessStudent(array $user, array $student): bool
+{
+    if (isAdministrator($user)) {
+        return true;
+    }
+
+    if (isCollegeDean($user)) {
+        return ($user['college'] ?? '') !== '' && $user['college'] === $student['college'];
+    }
+
+    return ($user['program'] ?? '') !== '' && $user['program'] === $student['program'];
+}
+
+function roleBadgeClass(array $user): string
+{
+    if (isAdministrator($user)) {
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    }
+
+    if (isCollegeDean($user)) {
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+    }
+
+    return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+}
+
 function recalculateMajorAverage(PDO $pdo, int $studentId): array
 {
     $statement = $pdo->prepare(
@@ -100,7 +147,7 @@ function getLoggedInUser(?PDO $pdo = null): ?array
     }
 
     if ($pdo !== null) {
-        $statement = $pdo->prepare('SELECT id, email, account_type, program FROM users WHERE id = :id LIMIT 1');
+        $statement = $pdo->prepare('SELECT id, email, account_type, program, college FROM users WHERE id = :id LIMIT 1');
         $statement->execute(['id' => (int) $_SESSION['user_id']]);
         $user = $statement->fetch();
 
@@ -114,6 +161,7 @@ function getLoggedInUser(?PDO $pdo = null): ?array
             'email' => $user['email'],
             'account_type' => $user['account_type'],
             'program' => $user['program'] ?? null,
+            'college' => $user['college'] ?? null,
         ];
     }
 

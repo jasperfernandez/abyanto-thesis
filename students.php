@@ -16,23 +16,50 @@ if ($program === '') {
 }
 
 $user = getLoggedInUser($pdo);
-$isRegistrar = $user['account_type'] === 'registrar';
+$isAdministrator = isAdministrator($user);
+$isCollegeDean = isCollegeDean($user);
 
-if (!$isRegistrar && $user['program'] !== $program) {
+$programStatement = $pdo->prepare(
+    'SELECT program, college
+     FROM students
+     WHERE program = :program
+     LIMIT 1'
+);
+$programStatement->execute(['program' => $program]);
+$programRecord = $programStatement->fetch();
+
+if (!$programRecord) {
     header('Location: index.php');
     exit;
 }
 
-$statement = $pdo->prepare(
-    'SELECT id, student_id, full_name, gwa, licensure_result
+if (
+    !$isAdministrator
+    && (!$isCollegeDean || $user['college'] !== $programRecord['college'])
+    && ($user['program'] ?? '') !== $program
+) {
+    header('Location: index.php');
+    exit;
+}
+
+$sql = 'SELECT id, student_id, full_name, gwa, licensure_result, college
      FROM students
      WHERE program = :program
-     ORDER BY CAST(student_id AS UNSIGNED), student_id'
-);
-$statement->execute(['program' => $program]);
+';
+$params = ['program' => $program];
+
+if ($isCollegeDean) {
+    $sql .= ' AND college = :college';
+    $params['college'] = $user['college'];
+}
+
+$sql .= ' ORDER BY CAST(student_id AS UNSIGNED), student_id';
+
+$statement = $pdo->prepare($sql);
+$statement->execute($params);
 $students = $statement->fetchAll();
 
-$roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
+$roleBadgeClass = roleBadgeClass($user);
 ?>
 <!doctype html>
 <html lang="en">
@@ -51,7 +78,7 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isRegistrar): ?>
+                <?php if ($isAdministrator): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -74,7 +101,7 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
             <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight"><?= e($program) ?></h1>
-                    <p class="mt-1 text-sm text-slate-600">Student records</p>
+                    <p class="mt-1 text-sm text-slate-600"><?= e($programRecord['college']) ?> student records</p>
                 </div>
                 <div class="rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm min-w-32">
                     <p class="text-xs uppercase tracking-wide text-slate-500">Students</p>

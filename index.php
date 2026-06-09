@@ -10,30 +10,49 @@ requireAuth();
 
 // Query program summary statistics
 $user = getLoggedInUser($pdo);
-$isRegistrar = $user['account_type'] === 'registrar';
+$isAdministrator = isAdministrator($user);
+$isCollegeDean = isCollegeDean($user);
 
-if ($isRegistrar) {
+if ($isAdministrator) {
     $programs = $pdo->query(
         'SELECT 
             program, 
+            college,
             COUNT(*) as total_students,
             SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
             SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
          FROM students
-         GROUP BY program
+         GROUP BY program, college
          ORDER BY program'
     )->fetchAll();
+} elseif ($isCollegeDean) {
+    $assignedCollege = $user['college'] ?? '';
+    $statement = $pdo->prepare(
+        'SELECT
+            program,
+            college,
+            COUNT(*) as total_students,
+            SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
+            SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
+         FROM students
+         WHERE college = :college
+         GROUP BY program, college
+         ORDER BY program'
+    );
+    $statement->execute(['college' => $assignedCollege]);
+    $programs = $statement->fetchAll();
 } else {
     $assignedProgram = $user['program'] ?? '';
     $statement = $pdo->prepare(
         'SELECT 
             program, 
+            college,
             COUNT(*) as total_students,
             SUM(CASE WHEN licensure_result = "PASS" THEN 1 ELSE 0 END) as passed_students,
             SUM(CASE WHEN licensure_result = "FAIL" THEN 1 ELSE 0 END) as failed_students
          FROM students
          WHERE program = :program
-         GROUP BY program
+         GROUP BY program, college
          ORDER BY program'
     );
     $statement->execute(['program' => $assignedProgram]);
@@ -51,7 +70,7 @@ foreach ($programs as $p) {
     $totalFailed += (int) $p['failed_students'];
 }
 
-$roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
+$roleBadgeClass = roleBadgeClass($user);
 ?>
 <!doctype html>
 <html lang="en">
@@ -70,7 +89,7 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isRegistrar): ?>
+                <?php if ($isAdministrator): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -116,6 +135,7 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
                     <thead class="bg-slate-100">
                         <tr>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Program Name</th>
+                            <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">College</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Students</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Passed</th>
                             <th class="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Failed</th>
@@ -132,6 +152,7 @@ $roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald
                             ?>
                             <tr class="cursor-pointer transition hover:bg-emerald-50" data-href="students.php?program=<?= urlencode($program['program']) ?>" tabindex="0">
                                 <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-900"><?= e($program['program']) ?></td>
+                                <td class="whitespace-nowrap px-5 py-4 text-slate-700"><?= e($program['college']) ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-700"><?= $total ?></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-700">
                                     <span class="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">

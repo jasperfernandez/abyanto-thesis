@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $user['email'],
                 'account_type' => $user['account_type'],
                 'program' => $user['program'] ?? null,
+                'college' => $user['college'] ?? null,
             ];
             header('Location: index.php');
             exit;

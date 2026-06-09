@@ -8,9 +8,9 @@ require __DIR__ . '/functions.php';
 requireAuth();
 
 $user = getLoggedInUser($pdo);
-$isRegistrar = $user['account_type'] === 'registrar';
+$isAdministrator = isAdministrator($user);
 
-if (!$isRegistrar) {
+if (!$isAdministrator) {
     header('Location: index.php');
     exit;
 }
@@ -21,21 +21,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userId = (int) ($_POST['user_id'] ?? 0);
     $program = trim((string) ($_POST['program'] ?? ''));
     $program = $program === '' ? null : $program;
+    $college = trim((string) ($_POST['college'] ?? ''));
+    $college = $college === '' ? null : $college;
 
-    $update = $pdo->prepare('UPDATE users SET program = :program WHERE id = :id');
-    $update->execute(['program' => $program, 'id' => $userId]);
+    $update = $pdo->prepare('UPDATE users SET program = :program, college = :college WHERE id = :id');
+    $update->execute(['program' => $program, 'college' => $college, 'id' => $userId]);
     $message = 'User updated.';
 }
 
 $users = $pdo->query(
-    'SELECT id, email, account_type, program FROM users ORDER BY account_type, email'
+    'SELECT id, email, account_type, program, college FROM users ORDER BY account_type, email'
 )->fetchAll();
 
 $programs = $pdo->query(
     'SELECT DISTINCT program FROM students WHERE program IS NOT NULL ORDER BY program'
 )->fetchAll();
 
-$roleBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+$colleges = $pdo->query(
+    'SELECT DISTINCT college FROM students WHERE college IS NOT NULL ORDER BY college'
+)->fetchAll();
+
+$roleBadgeClass = roleBadgeClass($user);
 ?>
 <!doctype html>
 <html lang="en">
@@ -71,7 +77,7 @@ $roleBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
                 &larr; Back to Programs
             </a>
             <h1 class="mt-4 text-3xl font-bold tracking-tight">Manage Users</h1>
-            <p class="mt-1 text-sm text-slate-600">Assign programs to program chair accounts</p>
+            <p class="mt-1 text-sm text-slate-600">Assign programs to program chairs and colleges to college deans</p>
         </div>
 
         <?php if ($message !== ''): ?>
@@ -87,7 +93,7 @@ $roleBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
                         <tr>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Email</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Account Type</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Program</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Scope</th>
                             <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Action</th>
                         </tr>
                     </thead>
@@ -100,10 +106,23 @@ $roleBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
                                     <?php if ($u['account_type'] === 'program chair'): ?>
                                         <form method="post" class="flex items-center gap-2">
                                             <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
+                                            <input type="hidden" name="college" value="">
                                             <select name="program" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
                                                 <option value="">-- None --</option>
                                                 <?php foreach ($programs as $p): ?>
                                                     <option value="<?= e($p['program']) ?>"<?= selectedOption($u['program'], $p['program']) ?>><?= e($p['program']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">Save</button>
+                                        </form>
+                                    <?php elseif ($u['account_type'] === 'college dean'): ?>
+                                        <form method="post" class="flex items-center gap-2">
+                                            <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">
+                                            <input type="hidden" name="program" value="">
+                                            <select name="college" class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                                <option value="">-- None --</option>
+                                                <?php foreach ($colleges as $c): ?>
+                                                    <option value="<?= e($c['college']) ?>"<?= selectedOption($u['college'], $c['college']) ?>><?= e($c['college']) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                             <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition">Save</button>
@@ -113,7 +132,10 @@ $roleBadgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
                                     <?php endif; ?>
                                 </td>
                                 <td class="whitespace-nowrap px-5 py-4">
-                                    <?php if ($u['account_type'] === 'program chair' && $u['program'] === null): ?>
+                                    <?php if (
+                                        ($u['account_type'] === 'program chair' && $u['program'] === null)
+                                        || ($u['account_type'] === 'college dean' && $u['college'] === null)
+                                    ): ?>
                                         <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">Needs setup</span>
                                     <?php endif; ?>
                                 </td>

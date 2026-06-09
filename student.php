@@ -34,9 +34,9 @@ $majorCourses = array_values(array_filter($courses, fn ($course) => (int) $cours
 $minorCourses = array_values(array_filter($courses, fn ($course) => (int) $course['is_major'] === 0));
 
 $user = getLoggedInUser($pdo);
-$isRegistrar = $user['account_type'] === 'registrar';
+$isAdministrator = isAdministrator($user);
 
-if (!$isRegistrar && $user['program'] !== $student['program']) {
+if (!userCanAccessStudent($user, $student)) {
     header('Location: index.php');
     exit;
 }
@@ -56,7 +56,7 @@ $programSummary = $programSummaryStatement->fetch() ?: [
     'failed_students' => 0,
 ];
 
-$roleBadgeClass = $isRegistrar ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200';
+$roleBadgeClass = roleBadgeClass($user);
 $message = $_GET['message'] ?? '';
 $prediction = $_GET['prediction'] ?? '';
 $hasPrediction = in_array($prediction, ['PASS', 'FAIL'], true);
@@ -99,7 +99,7 @@ $monthlyFamilyIncomeOptions = [
                 <span class="text-xl font-bold tracking-tight text-slate-900">Licensure Predictor</span>
             </div>
             <div class="flex items-center gap-4">
-                <?php if ($isRegistrar): ?>
+                <?php if ($isAdministrator): ?>
                     <a href="users.php" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Manage Users</a>
                 <?php endif; ?>
                 <div class="text-right hidden sm:block">
@@ -154,6 +154,10 @@ $monthlyFamilyIncomeOptions = [
                     <label class="block">
                         <span class="text-sm font-medium text-slate-700">Program</span>
                         <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="program" value="<?= e($student['program']) ?>" required>
+                    </label>
+                    <label class="block">
+                        <span class="text-sm font-medium text-slate-700">College</span>
+                        <input class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" name="college" value="<?= e($student['college']) ?>" required>
                     </label>
                 </div>
             </section>
@@ -235,7 +239,7 @@ $monthlyFamilyIncomeOptions = [
                     <?php foreach ($majorCourses as $course): ?>
                         <label class="block rounded-md border border-emerald-100 bg-emerald-50/60 p-3">
                             <span class="block text-sm font-semibold text-slate-800"><?= e($course['code']) ?></span>
-                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isRegistrar ? '' : 'readonly' ?>>
+                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isAdministrator ? '' : 'readonly' ?>>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -247,7 +251,7 @@ $monthlyFamilyIncomeOptions = [
                     <?php foreach ($minorCourses as $course): ?>
                         <label class="block rounded-md border border-slate-200 bg-slate-50 p-3">
                             <span class="block text-sm font-semibold text-slate-800"><?= e($course['code']) ?></span>
-                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isRegistrar ? '' : 'readonly' ?>>
+                            <input type="number" min="1" max="5" step="0.01" name="grades[<?= (int) $course['id'] ?>]" value="<?= e((string) $course['grade']) ?>" class="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200" <?= $isAdministrator ? '' : 'readonly' ?>>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -255,7 +259,7 @@ $monthlyFamilyIncomeOptions = [
 
             <div class="sticky bottom-0 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-4 backdrop-blur">
                 <a href="students.php?program=<?= urlencode($student['program']) ?>" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-100">Cancel</a>
-                <?php if ($isRegistrar): ?>
+                <?php if ($isAdministrator): ?>
                     <button type="submit" name="action" value="save" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">Save</button>
                 <?php endif; ?>
                 <button type="submit" name="action" value="predict" data-loading-text="Running..." class="inline-flex min-w-36 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700">

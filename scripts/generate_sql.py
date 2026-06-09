@@ -117,6 +117,10 @@ def sql(value):
     return "'" + str(value).replace("\\", "\\\\").replace("'", "''") + "'"
 
 
+def college_for_program(program):
+    return "College of Engineering" if "engineering" in str(program).lower() else "College of Teacher Education"
+
+
 def is_major(code):
     return str(code).startswith("ME ") or str(code).startswith("AME ")
 
@@ -168,7 +172,7 @@ lines.append(",\n".join(course_values) + ";")
 lines.append("")
 
 lines.append(
-    "INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program, city_municipality, province, postal_code, age, sex, secondary_school_name, secondary_school_type, father_educational_attainment, mother_educational_attainment, monthly_family_income) VALUES"
+    "INSERT INTO students (id, student_id, full_name, gwa, licensure_result, major_average, program, college, city_municipality, province, postal_code, age, sex, secondary_school_name, secondary_school_type, father_educational_attainment, mother_educational_attainment, monthly_family_income) VALUES"
 )
 student_values = []
 grade_values = []
@@ -196,6 +200,7 @@ for student_index, row in enumerate(rows[1:], start=1):
         f"{sql(predicted_result)}, "
         f"{sql(major_average)}, "
         f"{sql(program)}, "
+        f"{sql(college_for_program(program))}, "
         f"{sql(city)}, "
         f"{sql(province)}, "
         f"{sql(postal_code)}, "

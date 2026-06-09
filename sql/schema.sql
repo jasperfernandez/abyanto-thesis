@@ -13,8 +13,9 @@ CREATE TABLE users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(191) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  account_type ENUM('registrar', 'program chair') NOT NULL,
+  account_type ENUM('administrator', 'program chair', 'college dean') NOT NULL,
   program VARCHAR(160) NULL,
+  college VARCHAR(160) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -27,6 +28,7 @@ CREATE TABLE students (
   licensure_result ENUM('PASS', 'FAIL') NOT NULL DEFAULT 'FAIL',
   major_average DECIMAL(4,2) NULL,
   program VARCHAR(160) NOT NULL,
+  college VARCHAR(160) NOT NULL,
   city_municipality VARCHAR(120) NULL,
   province VARCHAR(120) NULL,
   postal_code VARCHAR(20) NULL,
@@ -38,7 +40,9 @@ CREATE TABLE students (
   mother_educational_attainment VARCHAR(80) NULL,
   monthly_family_income VARCHAR(80) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_students_college (college),
+  INDEX idx_students_program_college (program, college)
 ) ENGINE=InnoDB;
 
 CREATE TABLE courses (
